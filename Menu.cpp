@@ -1,10 +1,21 @@
 #include <iostream>
 #include <allegro.h>
 #include <time.h>
- 
+
 // Atributos da tela
 #define LARGURA_TELA 500
 #define ALTURA_TELA 1024
+
+#define GRAUS_PARA_ALLEGRO(x) x/1.40625  //conversão
+
+// Estruturas
+
+/*struct obj {int wx, wy, x, y, w, h;};
+struct obj
+{
+	playerA = {0,0,200,200,50,50},
+	tiro = {0,0,200,200,50,50}
+};*/
 
 // Mapas
 
@@ -76,6 +87,7 @@ void Libera_Mapa(int **mapa, int linhas)
 // Variáveis Globais
 
 volatile int timer;
+int angulo;
 
 void incrementa_timer()
 {
@@ -89,6 +101,8 @@ int main(void)
 	allegro_init();
 	install_timer();
 	install_keyboard();
+	install_mouse();
+	set_mouse_speed(20, 20);
 	set_color_depth(32);
 	set_gfx_mode(GFX_AUTODETECT_WINDOWED, ALTURA_TELA, LARGURA_TELA, 0, 0);
 	set_window_title("Counter Strike 2D");
@@ -97,6 +111,7 @@ int main(void)
 	int x = 100, y = 100, vel = 5;
 	bool TocandoPassos = false;
 	timer = 0;
+	angulo=0;
 	LOCK_FUNCTION(incrementa_timer);
 	LOCK_VARIABLE(timer);
 	install_int_ex(incrementa_timer, MSEC_TO_TIMER(250));
@@ -104,15 +119,11 @@ int main(void)
 
 	// Carregar Imagens
 	BITMAP *buffer = create_bitmap(ALTURA_TELA,LARGURA_TELA);
-	BITMAP *Personagem[5];
 	BITMAP *Armas[5];
 	// Quatro lados do Personagem
-	Personagem[0] = load_bitmap("Imagens/Jogadores/player_c.bmp", NULL);
-	Personagem[1] = load_bitmap("Imagens/Jogadores/player_b.bmp", NULL);
-	Personagem[2] = load_bitmap("Imagens/Jogadores/player_d.bmp", NULL);
-	Personagem[3] = load_bitmap("Imagens/Jogadores/player_e.bmp", NULL);
-	Personagem[4] =  load_bitmap("Imagens/Jogadores/player_c.bmp", NULL);
-	
+	BITMAP *Personagem = load_bitmap("Imagens/Jogadores/player_c.bmp", NULL);
+	BITMAP *Mira = load_bitmap("Imagens/Outros/Mira.bmp", NULL);
+	show_mouse(Mira);
 	// MAPA
 	int linhas, colunas;
 	int **mapa = Carregar_Mapa("Mapas/mapa.txt", &linhas, &colunas);
@@ -124,7 +135,6 @@ int main(void)
 		if(key[KEY_D] && !key[KEY_LSHIFT]) // Direita
 		{
 			x += 2;
-			Personagem[0] = Personagem[2];
 			//			Var       Vol  Can  Vel Rep
 			if(!TocandoPassos)
 			{
@@ -134,12 +144,10 @@ int main(void)
 		else if(key[KEY_D] && key[KEY_LSHIFT]) // Direita
 		{
 			x += 1;
-			Personagem[0] = Personagem[2];
 		}
 		if(key[KEY_A] && !key[KEY_LSHIFT]) // Esquerda
 		{ 
 			x -= 2;
-			Personagem[0] = Personagem[3];
 			if(!TocandoPassos)
 			{
 				TocandoPassos = true;
@@ -148,12 +156,10 @@ int main(void)
 		else if(key[KEY_A] && key[KEY_LSHIFT]) // Esquerda
 		{ 
 			x -= 1;
-			Personagem[0] = Personagem[3];
 		}
 		if(key[KEY_W] && !key[KEY_LSHIFT]) // Cima
 		{ 
 			y -= 2;
-			Personagem[0] = Personagem[4];
 			if(!TocandoPassos)
 			{
 				TocandoPassos = true;
@@ -162,12 +168,10 @@ int main(void)
 		else if(key[KEY_W] && key[KEY_LSHIFT]) // Cima
 		{ 
 			y -= 1;
-			Personagem[0] = Personagem[4];
 		}
 		if(key[KEY_S] && !key[KEY_LSHIFT]) // Baixo
 		{
 			y += 2;
-			Personagem[0] = Personagem[1];
 			if(!TocandoPassos)
 			{
 				TocandoPassos = true;
@@ -176,7 +180,6 @@ int main(void)
 		else if(key[KEY_S] && key[KEY_LSHIFT])
 		{
 			y += 1;
-			Personagem[0] = Personagem[1];
 		}
 		if(timer > 1)
 		{
@@ -195,14 +198,16 @@ int main(void)
 			}
 		}
 		Desenhar_Mapa(buffer, mapa, linhas, colunas);
-		draw_sprite(buffer, Personagem[0], 100+x,100+y);
+		//draw_sprite(buffer, Personagem, 100+x, 100+y);
+		pivot_sprite(buffer, Personagem, 100+x, 100+y, 100, 100, itofix(GRAUS_PARA_ALLEGRO(mouse_y)));
+		//rotate_sprite(buffer, Personagem, mouse_x, mouse_y, itofix(GRAUS_PARA_ALLEGRO(angulo)));
+		draw_sprite(buffer, Mira, mouse_x, mouse_y);
 		draw_sprite(screen, buffer, 0, 0);
-
-		rest(5);
+		rest(1);
 		clear(buffer);
 	}
-	for(int x = 0; x<5; x++)
-		destroy_bitmap(Personagem[x]);
+	destroy_bitmap(Personagem);
+	destroy_bitmap(Mira);
 	destroy_bitmap(buffer);
 	destroy_sample(Caminhar);
 	Libera_Mapa(mapa, linhas);
