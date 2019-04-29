@@ -32,8 +32,10 @@ struct TProjeteis
 	int ID;
 	float x;
 	float y;
-	float z;
+	float tiro_x;
+	float tiro_y;
 	int velocidade;
+	int quadrante;
 	bool recaregando = false;
 	bool ativo = false;
 };
@@ -116,21 +118,32 @@ TPersonagem Subtrair(float Mira_x, float Mira_y, float Mira_z, TPersonagem Jogad
 	diferenca.z = Mira_z - Jogador.z;
 	return diferenca;
 }
-float Magnitude(TPersonagem vec)
-{
-	return sqrtf(vec.x*vec.x + vec.y + vec.y + vec.z*vec.z);
-}
-float Distancia(float Mira_x, float Mira_y, float Mira_z, TPersonagem Jogador)
-{
-	TPersonagem diferenca = Subtrair(Mira_x, Mira_y, Mira_z, Jogador);
-	return Magnitude(diferenca);
-}
 TPersonagem CalcularAngulo(float Mira_x, float Mira_y, float Mira_z, TPersonagem Jogador)
 {
 	TPersonagem diferenca = Subtrair(Mira_x, Mira_y, Mira_z, Jogador);
 	TPersonagem Angulo;
 	Angulo.z = (-(float)atan2(diferenca.x, diferenca.y)) / M_PI * 180.0f + 180.0f;
 	return Angulo;
+}
+
+// Destruir Tiros
+
+TPersonagem SubtrairDist(float Mira_x, float Mira_y, float Mira_z, TProjeteis Tiro)
+{
+	TPersonagem diferenca;
+	diferenca.x = Mira_x - Tiro.x;
+	diferenca.y = Mira_y - Tiro.y;
+	diferenca.z = Mira_z - 0;
+	return diferenca;
+}
+float Magnitude(TPersonagem vec)
+{
+	return sqrtf(vec.x*vec.x + vec.y + vec.y + vec.z*vec.z);
+}
+float Distancia(TProjeteis Balas)
+{
+	TPersonagem diferenca = SubtrairDist(Balas.tiro_x, Balas.tiro_y, 0, Balas);
+	return Magnitude(diferenca);
 }
 
 void InitBalas(TProjeteis balas[], int tamanho)
@@ -150,7 +163,14 @@ void AtiraBalas(TProjeteis balas[], int tamanho, TPersonagem jogador)
 		{
 			balas[i].x = jogador.x+17;
 			balas[i].y = jogador.y;
+			balas[i].tiro_x = mouse_x-15;
+			balas[i].tiro_y = mouse_y-25;
 			balas[i].ativo = true;
+			TPersonagem Angulo = CalcularAngulo(mouse_x, mouse_y, mouse_z, jogador);
+			if(Angulo.z >= itofix(GRAUS_PARA_ALLEGRO(0)) && Angulo.z <= itofix(GRAUS_PARA_ALLEGRO(180)))
+				balas[i].quadrante = 0;
+			else
+				balas[i].quadrante = 1;
 			break;
 		}
 	}
@@ -161,19 +181,33 @@ void AtualizarBalas(TProjeteis balas[], int tamanho)
 	{
 		if(balas[i].ativo)
 		{
-			balas[i].x += balas[i].velocidade;
-			if(balas[i].x > LARGURA_TELA)
+			double bullet_direction = atan2((balas[i].tiro_y) - balas[i].y , (balas[i].tiro_x-15) - balas[i].x);
+			if(balas[i].quadrante == 0) //atirar pra frente
+			{
+				balas[i].x += balas[i].velocidade*cos(bullet_direction);
+				balas[i].y += balas[i].velocidade*sin(bullet_direction);
+			}
+			else if(balas[i].quadrante == 1) // atirar pra trás
+			{
+				balas[i].x -= balas[i].velocidade*cos(bullet_direction);
+				balas[i].y -= balas[i].velocidade*sin(bullet_direction);
+			}
+			float DistanciaT = sqrtf(((balas[i].tiro_x - balas[i].x)*(balas[i].tiro_x - balas[i].x)) + ((balas[i].tiro_y - balas[i].y)*(balas[i].tiro_y - balas[i].y)));
+			// Remover da Tela
+			if(DistanciaT < 30)
 				balas[i].ativo = false;
 		}
 	}
 }
-void DesenharBalas(BITMAP *buffer, TProjeteis balas[], int tamanho)
+void DesenharBalas(BITMAP *buffer, TProjeteis balas[], int tamanho, TPersonagem Jogador)
 {
 	for(int i = 0; i<tamanho; i++)
 	{
 		if(balas[i].ativo)
 		{
-			circle(buffer, balas[i].x+35, balas[i].y+35, 1, makecol(255,255,255));
+			TPersonagem Angulo = CalcularAngulo(mouse_x, mouse_y, mouse_z, Jogador);
+			// itofix(GRAUS_PARA_ALLEGRO(Angulo.z)
+			circle(buffer, balas[i].x+45, balas[i].y+35, 2, makecol(255,0,0));
 		}
 	}
 }
@@ -322,7 +356,7 @@ int main(void)
 				TimerTiros = 0;
 			}
 		}
-		if(key[KEY_SPACE])
+		if(mouse_b)
 		{
 			if(!TocandoTiros)
 			{	
@@ -338,7 +372,7 @@ int main(void)
 		TPersonagem Angulo = CalcularAngulo(mouse_x, mouse_y, mouse_z, Jogador);
 		rotate_sprite(buffer, Personagem, Jogador.x, Jogador.y, itofix(GRAUS_PARA_ALLEGRO(Angulo.z)));
 		draw_sprite(buffer, Mira, mouse_x, mouse_y);
-		DesenharBalas(buffer, Balas, NUM_BALAS);
+		DesenharBalas(buffer, Balas, NUM_BALAS, Jogador);
 		draw_sprite(screen, buffer, 0, 0);
 		rest(1);
 		clear(buffer);
