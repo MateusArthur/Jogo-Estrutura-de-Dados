@@ -94,7 +94,7 @@ void Desenhar_Mapa(BITMAP *buffer, int **mapa, int linhas, int colunas)
 		for(j = 0; j < colunas; j ++)
 		{
 			if(mapa[i][j] == SOLO)
-				rectfill(buffer, j * TILESIZE, i * TILESIZE, (j * TILESIZE) + TILESIZE, (i * TILESIZE) + TILESIZE, makecol(0,230,0));
+				rectfill(buffer, j * TILESIZE, i * TILESIZE, (j * TILESIZE) + TILESIZE, (i * TILESIZE) + TILESIZE, makecol(0,0,0));
 			else if(mapa[i][j] == GRAMA)
 				rectfill(buffer, j * TILESIZE, i * TILESIZE, (j * TILESIZE) + TILESIZE, (i * TILESIZE) + TILESIZE, makecol(0,230,0));
 			else if(mapa[i][j] == AGUA)
@@ -293,6 +293,7 @@ int main(void)
 	BITMAP *buffer = create_bitmap(ALTURA_TELA,LARGURA_TELA);
 	BITMAP *Personagem = load_bitmap("Imagens/Jogadores/player_c.bmp", NULL);
 	BITMAP *Mira = load_bitmap("Imagens/Outros/Mira.bmp", NULL);
+	BITMAP *FogoTiro = load_bitmap("Imagens/Outros/Tiro.bmp", NULL);
 	
 	//Carregar a mira
 	show_mouse(Mira);
@@ -301,7 +302,6 @@ int main(void)
 
 	int linhas, colunas;
 	int **mapa = Carregar_Mapa("Mapas/mapa.txt", &linhas, &colunas);
-	
 	//Sons
 	
 	SAMPLE *Caminhar = load_sample("Sons/Jogadores/Correndo.wav");
@@ -415,7 +415,7 @@ int main(void)
 		bool colidiu = false;
 		int px = Jogador.x-160;
 		int py = Jogador.y-160+16;
-		/*for(int ci=0; ci < 32; ci++) 
+		for(int ci=0; ci < 32; ci++) 
 		{
 			for(int cj = 0; cj < 16; cj++)
 			{
@@ -425,7 +425,7 @@ int main(void)
 					ci = 32;
 					cj = 16;
 				}
-				if(getpixel(Colisao, Jogador.x+ci, Jogador.y+cj) == 0x00ff00) 
+				if(getpixel(Colisao, Jogador.x+ci, Jogador.y+cj) == makecol(133,133,133)) 
 					sair = true;
 			}
 		}
@@ -433,10 +433,10 @@ int main(void)
 		{
 			Jogador.x = ax;
 			Jogador.y = ay;
-		}*/
+		}
 		// Fim Colisao
-		AtualizarBalas(Balas, NUM_BALAS);
 		Desenhar_Mapa(buffer, mapa, linhas, colunas);
+		AtualizarBalas(Balas, NUM_BALAS);
 		TPersonagem Angulo = CalcularAngulo(mouse_x, mouse_y, mouse_z, Jogador);
 		Jogador.z = Angulo.z;
 		rotate_sprite(buffer, Personagem, Jogador.x, Jogador.y, itofix(GRAUS_PARA_ALLEGRO(Angulo.z)));
@@ -446,7 +446,7 @@ int main(void)
 		sprintf(str, "Balas: %d", Jogador.qntBalas);
 		if(Jogador.recarregando) 
 		{ 
-			textout_ex(buffer, font, "teste", 100, 100, makecol(255,0,0), 0);
+			textout_ex(buffer, font, "Recarregando, Aguarde..", Jogador.x-30, Jogador.y-10, makecol(255,0,0), -1);
 		}
 		textout_ex(buffer, font, str, 30, 10, makecol(255,0,0), 0);
 		Barra_Vida(buffer, Jogador);
