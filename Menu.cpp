@@ -39,7 +39,8 @@ struct TPersonagem
 
 struct TInimigos 
 {
-	int x, y; 
+	int x, y;
+	float visao_x, visao_y;
 	float z;
 	int qntBalas;
 	bool recarregando = false;
@@ -150,8 +151,8 @@ TPersonagem CalcularAngulo(float Mira_x, float Mira_y, float Mira_z, TPersonagem
 TInimigos SubtrairInimigo(float Jogador_x, float Jogador_y, float Jogador_z, TInimigos Inimigo)
 {
 	TInimigos diferenca;
-	diferenca.x = Jogador_x - (Inimigo.x+26);
-	diferenca.y = Jogador_y - (Inimigo.y+28);
+	diferenca.x = Jogador_x - (Inimigo.x);
+	diferenca.y = Jogador_y - (Inimigo.y);
 	diferenca.z = Jogador_z - Inimigo.z;
 	return diferenca;
 }
@@ -204,7 +205,6 @@ void AtiraBalas(TProjeteis balas[], int tamanho, TPersonagem jogador)
 			balas[i].tiro_x = mouse_x-15;
 			balas[i].tiro_y = mouse_y-25;
 			balas[i].ativo = true;
-			TPersonagem Angulo = CalcularAngulo(mouse_x, mouse_y, mouse_z, jogador);
 			break;
 		}
 	}
@@ -215,13 +215,11 @@ void AtiraBalasInimigos(TProjeteis balas[], int tamanho, TInimigos Inimigo, TPer
 	{
 		if(!balas[i].ativo)
 		{
-			printf("chegous");
 			balas[i].x = Inimigo.x+17;
 			balas[i].y = Inimigo.y;
-			balas[i].tiro_x = Jogador.x-15;
-			balas[i].tiro_y = Jogador.y-25;
+			balas[i].tiro_x = Jogador.x;
+			balas[i].tiro_y = Jogador.y;
 			balas[i].ativo = true;
-			TInimigos Angulo = CalcularAnguloInimigo(Jogador.x, Jogador.y, Jogador.z, Inimigo);
 			break;
 		}
 	}
@@ -235,6 +233,14 @@ void AtualizarBalas(TProjeteis balas[], int tamanho)
 			double bullet_direction = atan2((balas[i].tiro_y) - balas[i].y , (balas[i].tiro_x) - balas[i].x);
 			balas[i].x += balas[i].velocidade*cos(bullet_direction);
 			balas[i].y += balas[i].velocidade*sin(bullet_direction);
+			for(int j = 0; j < MAX_COLISOES; j++)
+			{
+				//
+				if(balas[i].x >= Colisoes[j][0]-20 && balas[i].y <= Colisoes[j][3]-29 && balas[i].x <= Colisoes[j][2]-25 && balas[i].y >= Colisoes[j][1]-35)
+				{
+					balas[i].ativo = false;
+				}
+			}
 			float DistanciaT = sqrtf(((balas[i].tiro_x - balas[i].x)*(balas[i].tiro_x - balas[i].x)) + ((balas[i].tiro_y - balas[i].y)*(balas[i].tiro_y - balas[i].y)));
 			// Remover da Tela
 			if(DistanciaT < 5)
@@ -242,17 +248,15 @@ void AtualizarBalas(TProjeteis balas[], int tamanho)
 		}
 	}
 }
-void DesenharBalas(BITMAP *buffer, TProjeteis balas[], int tamanho, TPersonagem Jogador)
+void DesenharBalas(BITMAP *buffer, TProjeteis balas[], int tamanho) 
 {
 	for(int i = 0; i<tamanho; i++)
 	{
 		if(balas[i].ativo)
 		{
-			TPersonagem Angulo = CalcularAngulo(mouse_x, mouse_y, mouse_z, Jogador);
-			// itofix(GRAUS_PARA_ALLEGRO(Angulo.z)
 			int somarx = 22;
 			int somary = 35;
-			circle(buffer, balas[i].x+somarx, balas[i].y+somary, 1, makecol(255,0,0));
+			circle(buffer, balas[i].x+somarx, balas[i].y+somary, 2, makecol(255,0,0));
 		}
 	}
 }
@@ -307,12 +311,31 @@ void Desenhar_Colisoes(BITMAP *buffer)
 
 bool Checar_Colisao(int x, int y) 
 {
-	printf("Depois %d %d\n", x,y);
-
-	for(int j = 0; j < 1; j++)
+	for(int j = 0; j < MAX_COLISOES; j++)
 	{
-		printf("%d >= %d && %d <= %d && %d >= %d && %d <= %d\n", x, Colisoes[j][0], x, Colisoes[j][2], y, Colisoes[j][1], y, Colisoes[j][3]);
-		if(x >= Colisoes[j][0] && x <= Colisoes[j][2] && y >= Colisoes[j][1] && y <= Colisoes[j][3])
+		if(x >= Colisoes[j][0]-74 && y <= Colisoes[j][3] && x <= Colisoes[j][2]-5 && y >= Colisoes[j][1]-70)
+			return true;
+	}
+	return false;
+}
+
+bool Checar_VisaoInimigo(TInimigos Inimigo, int Jogador_x, int Jogador_y)
+{
+	float DistanciaT = 100;
+	Inimigo.visao_x = Inimigo.x+17;
+	Inimigo.visao_y = Inimigo.y;
+	while(DistanciaT > 5)
+	{
+		double bullet_direction = atan2((Jogador_y) - Inimigo.visao_y , (Jogador_x) - Inimigo.visao_x);
+		Inimigo.visao_x += 5*cos(bullet_direction);
+		Inimigo.visao_y += 5*sin(bullet_direction);
+		for(int j = 0; j < MAX_COLISOES; j++)
+		{
+			if(Inimigo.visao_x >= Colisoes[j][0]-20 && Inimigo.visao_y <= Colisoes[j][3]-29 && Inimigo.visao_x <= Colisoes[j][2]-25 && Inimigo.visao_y >= Colisoes[j][1]-35)
+				return false;
+		}
+		DistanciaT = sqrtf(((Jogador_x - Inimigo.visao_x)*(Jogador_x - Inimigo.visao_x)) + ((Jogador_y - Inimigo.visao_y)*(Jogador_y - Inimigo.visao_y)));
+		if(DistanciaT < 5)
 			return true;
 	}
 	return false;
@@ -379,7 +402,7 @@ int main(void)
 	// Inicializar Variaveis Bot's
 	//BOT 1
 	Inimigo.x = 670;
-	Inimigo.y = 127;
+	Inimigo.y = 300;
 	Inimigo.qntBalas = 30;
 	Inimigo.vida = 200;
 	Inimigo.vidamax = 200;
@@ -388,6 +411,8 @@ int main(void)
 	TimerRecarregar[NPC] = 0;
 	RodarTimerRecarregar[NPC] = false;
 	RodarTimerTiro[NPC] = false;
+	Inimigo.visao_x = 0;
+	Inimigo.visao_y = 0;
 	// Fim Inicialização de variáveis
 	LOCK_FUNCTION(incrementa_TimerOuvirPassos);
 	LOCK_FUNCTION(incrementa_TimerTiros);
@@ -551,7 +576,10 @@ int main(void)
 				RodarTimerTiro[NPC] = false;
 			}
 		}
-		if(!TocandoTiros[NPC] && Inimigo.qntBalas != 0 && Inimigo.enxergando)
+		int px = Jogador.x-15;
+		int py = Jogador.y-25;
+		Inimigo.enxergando = Checar_VisaoInimigo(Inimigo, px, py);
+		if(!TocandoTiros[NPC] && Inimigo.qntBalas != 0 && Inimigo.enxergando == true)
 		{
 			play_sample(STiro, 255, 128, 1000, 0);
 			AtiraBalasInimigos(Balas, NUM_BALAS, Inimigo, Jogador);
@@ -560,10 +588,7 @@ int main(void)
 			RodarTimerTiro[NPC] = true;
 		}
 		// Verificar Colisao
-		int px = Jogador.x;
-		int py = Jogador.y;
-		printf("Antes %d %d\n", px,py);
-		if(Checar_Colisao(px, px) || Jogador.y < 0 || Jogador.x < 0 || Jogador.y >= 550 || Jogador.x > 740) 
+		if(Checar_Colisao(Jogador.x, Jogador.y) || Jogador.y < 0 || Jogador.x < 0 || Jogador.y >= 550 || Jogador.x > 740) 
 		{
 			Jogador.x = ax;
 			Jogador.y = ay;
@@ -577,10 +602,14 @@ int main(void)
 		Jogador.z = Angulo.z;
 		rotate_sprite(buffer, Personagem, Jogador.x, Jogador.y, itofix(GRAUS_PARA_ALLEGRO(Angulo.z)));
 		TInimigos AnguloInimigo = CalcularAnguloInimigo(Jogador.x, Jogador.y, Jogador.z, Inimigo);
-		Inimigo.z = AnguloInimigo.z;
-		rotate_sprite(buffer, InimigoBMP, Inimigo.x, Inimigo.y, itofix(GRAUS_PARA_ALLEGRO(Inimigo.z)));
+		if(Inimigo.enxergando) 
+		{
+			Inimigo.z = AnguloInimigo.z;
+			rotate_sprite(buffer, InimigoBMP, Inimigo.x, Inimigo.y, itofix(GRAUS_PARA_ALLEGRO(Inimigo.z)));
+		}
+		else rotate_sprite(buffer, InimigoBMP, Inimigo.x, Inimigo.y, itofix(GRAUS_PARA_ALLEGRO(Inimigo.z)));
 		draw_sprite(buffer, Mira, mouse_x, mouse_y);
-		DesenharBalas(buffer, Balas, NUM_BALAS, Jogador);
+		DesenharBalas(buffer, Balas, NUM_BALAS);
 		//Textos
 		sprintf(str, "Balas: %d", Jogador.qntBalas);
 		if(Jogador.recarregando) 
@@ -588,10 +617,6 @@ int main(void)
 			textout_ex(buffer, font, "Recarregando, Aguarde..", Jogador.x-30, Jogador.y-10, makecol(255,0,0), -1);
 		}
 		textout_ex(buffer, font, str, 30, 10, makecol(255,0,0), 0);
-		sprintf(str, "Mouse x: %d | Mouse Y: %d", mouse_x, mouse_y);
-		textout_ex(buffer, font, str, mouse_x, mouse_y, makecol(255,0,0), 0);
-		sprintf(str, "Personagem x: %d | Personagem Y: %d", Jogador.x, Jogador.y);
-		textout_ex(buffer, font, str, Jogador.x, Jogador.y, makecol(255,0,0), 0);
 		Barra_Vida(buffer, Jogador);
 		//Fim
 		draw_sprite(screen, buffer, 0, 0);
