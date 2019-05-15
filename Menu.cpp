@@ -23,6 +23,8 @@ bool RodarTimerTiro[MAX_PLAYERS];
 const int NUM_BALAS = 30;
 const int TILESIZE = 50;
 int Colisoes[MAX_COLISOES][4];
+int SalvarVida[MAX_PLAYERS];
+
 // Estruturas
 
 enum IDS {JOGADORES, PROJETIL, INIMIGOS};
@@ -41,7 +43,7 @@ struct TInimigos
 {
 	int x, y;
 	float visao_x, visao_y;
-	float z;
+	float z = -90;
 	int qntBalas;
 	bool recarregando = false;
 	int vida;
@@ -60,6 +62,7 @@ struct TProjeteis
 	float x_anterior;
 	float y_anterior;
 	int velocidade;
+	int atirador = -1;
 	bool ativo = false;
 };
 
@@ -205,6 +208,7 @@ void AtiraBalas(TProjeteis balas[], int tamanho, TPersonagem jogador)
 			balas[i].tiro_x = mouse_x-15;
 			balas[i].tiro_y = mouse_y-25;
 			balas[i].ativo = true;
+			balas[i].atirador = playerid;
 			break;
 		}
 	}
@@ -220,11 +224,12 @@ void AtiraBalasInimigos(TProjeteis balas[], int tamanho, TInimigos Inimigo, TPer
 			balas[i].tiro_x = Jogador.x;
 			balas[i].tiro_y = Jogador.y;
 			balas[i].ativo = true;
+			balas[i].atirador = NPC;
 			break;
 		}
 	}
 }
-void AtualizarBalas(TProjeteis balas[], int tamanho)
+void AtualizarBalas(TProjeteis balas[], int tamanho, TPersonagem Jogador, TInimigos Inimigo)
 {
 	for(int i = 0; i<tamanho; i++)
 	{
@@ -241,9 +246,26 @@ void AtualizarBalas(TProjeteis balas[], int tamanho)
 					balas[i].ativo = false;
 				}
 			}
+			float Distancia_Alvo;
+			if(balas[i].atirador == playerid)
+			{
+				Distancia_Alvo = sqrtf(((Inimigo.x - balas[i].x)*(Inimigo.x - balas[i].x)) + ((Inimigo.y - balas[i].y)*(Inimigo.y - balas[i].y)));
+			}
+			else 
+			{
+				Distancia_Alvo = sqrtf(((Jogador.x - balas[i].x)*(Jogador.x - balas[i].x)) + ((Jogador.y - balas[i].y)*(Jogador.y - balas[i].y)));
+			}
 			float DistanciaT = sqrtf(((balas[i].tiro_x - balas[i].x)*(balas[i].tiro_x - balas[i].x)) + ((balas[i].tiro_y - balas[i].y)*(balas[i].tiro_y - balas[i].y)));
 			// Remover da Tela
-			if(DistanciaT < 5)
+			if(Distancia_Alvo < 15)
+			{
+				if(balas[i].atirador == playerid)
+					SalvarVida[NPC] = Inimigo.vida -= 10;
+				else
+					 SalvarVida[playerid] = Jogador.vida -= 10;
+				balas[i].ativo = false;
+			}
+			else if(DistanciaT < 5)
 				balas[i].ativo = false;
 		}
 	}
@@ -261,6 +283,12 @@ void DesenharBalas(BITMAP *buffer, TProjeteis balas[], int tamanho)
 	}
 }
 //Funcoes de vida
+void Barra_Vida_Inimigo(BITMAP *buffer, TInimigos Inimigo) 
+{
+	int nm = (Inimigo.vida*93)/Inimigo.vidamax;
+	rectfill(buffer, Inimigo.x-5+1, Inimigo.y-10, Inimigo.x+nm, Inimigo.y, 0xFF0000);
+	rect(buffer, Inimigo.x-5, Inimigo.y-10, Inimigo.x+93, Inimigo.y, 0x000000);
+}
 void Barra_Vida(BITMAP *buffer, TPersonagem Jogador) 
 {
 	int n = (Jogador.vida*150) / Jogador.vidamax;
@@ -340,7 +368,22 @@ bool Checar_VisaoInimigo(TInimigos Inimigo, int Jogador_x, int Jogador_y)
 	}
 	return false;
 }
-
+int SetarPos_x(TInimigos Inimigo)
+{
+	if(Inimigo.x < Inimigo.escutou_x)
+		return Inimigo.x += 2;
+	else if(Inimigo.x >= Inimigo.escutou_x)
+		return Inimigo.x -= 2;
+	return Inimigo.x;
+}
+int SetarPos_y(TInimigos Inimigo)
+{
+	if(Inimigo.y < Inimigo.escutou_y)
+		return Inimigo.y += 2;
+	else if(Inimigo.y >= Inimigo.escutou_y)
+		return Inimigo.y -= 2;
+	return Inimigo.y;
+}
 // Funções Timer;
 void incrementa_TimerOuvirPassos()
 {
@@ -387,6 +430,7 @@ int main(void)
 	bool sair = false;
 	bool TocandoPassos = false;
 	bool TocandoTiros[MAX_PLAYERS];
+	bool InimigoMovimentando = false;
 	//Inicializar Variaveis Players
 	Jogador.x = 80; 
 	Jogador.y = 280;
@@ -399,6 +443,7 @@ int main(void)
 	TimerRecarregar[playerid] = 0;
 	RodarTimerRecarregar[playerid] = false;
 	RodarTimerTiro[playerid] = false;
+	SalvarVida[playerid] = 200;
 	// Inicializar Variaveis Bot's
 	//BOT 1
 	Inimigo.x = 670;
@@ -413,6 +458,9 @@ int main(void)
 	RodarTimerTiro[NPC] = false;
 	Inimigo.visao_x = 0;
 	Inimigo.visao_y = 0;
+	Inimigo.escutou_x = -1;
+	Inimigo.escutou_y = -1;
+	SalvarVida[NPC] = 200;
 	// Fim Inicialização de variáveis
 	LOCK_FUNCTION(incrementa_TimerOuvirPassos);
 	LOCK_FUNCTION(incrementa_TimerTiros);
@@ -460,7 +508,7 @@ int main(void)
 		if(key[KEY_D] && !key[KEY_LSHIFT]) // Direita
 		{
 			Jogador.x += 2;
-			//			Var       Vol  Can  Vel Rep
+			Inimigo.escutou_x = Jogador.x;
 			if(!TocandoPassos)
 			{
 				TocandoPassos = true;
@@ -473,6 +521,7 @@ int main(void)
 		if(key[KEY_A] && !key[KEY_LSHIFT]) // Esquerda
 		{ 
 			Jogador.x -= 2;
+			Inimigo.escutou_x = Jogador.x;
 			if(!TocandoPassos)
 			{
 				TocandoPassos = true;
@@ -485,6 +534,7 @@ int main(void)
 		if(key[KEY_W] && !key[KEY_LSHIFT]) // Cima
 		{ 
 			Jogador.y -= 2;
+			Inimigo.escutou_y = Jogador.y;
 			if(!TocandoPassos)
 			{
 				TocandoPassos = true;
@@ -497,6 +547,7 @@ int main(void)
 		if(key[KEY_S] && !key[KEY_LSHIFT]) // Baixo
 		{
 			Jogador.y += 2;
+			Inimigo.escutou_y = Jogador.y;
 			if(!TocandoPassos)
 			{
 				TocandoPassos = true;
@@ -593,11 +644,45 @@ int main(void)
 			Jogador.x = ax;
 			Jogador.y = ay;
 		}
+		if(Inimigo.enxergando)
+		{
+			Inimigo.escutou_x = -1;
+			Inimigo.escutou_y = -1;
+		}
+		else
+		{
+			int arm_x = 0;
+			int arm_y = 0;
+			if(Inimigo.escutou_x != -1 && Inimigo.x != Inimigo.escutou_x)
+			{
+				arm_x = SetarPos_x(Inimigo);
+				if(Checar_Colisao(arm_x, Inimigo.y))
+				{
+					Inimigo.y += 2;
+				}
+				else Inimigo.x = arm_x;
+			}
+			else if(Inimigo.x == Inimigo.escutou_x)
+				Inimigo.escutou_x = -1;
+			if(Inimigo.escutou_y != -1 && Inimigo.y != Inimigo.escutou_y)
+			{
+				arm_y = SetarPos_y(Inimigo);
+				if(Checar_Colisao(Inimigo.x, arm_y))
+				{
+					Inimigo.x += 2;
+				}
+				else Inimigo.y = arm_y;
+			}
+			else if(Inimigo.escutou_y == Inimigo.y)
+				Inimigo.escutou_y = -1;
+		}
 		// Fim Colisao
 		Desenhar_Mapa(buffer, Parede, mapa, linhas, colunas);
 		// Desenhar Colisões
 		Desenhar_Colisoes(buffer);
-		AtualizarBalas(Balas, NUM_BALAS);
+		AtualizarBalas(Balas, NUM_BALAS, Jogador, Inimigo);
+		Jogador.vida = SalvarVida[playerid];
+		Inimigo.vida = SalvarVida[NPC];
 		TPersonagem Angulo = CalcularAngulo(mouse_x, mouse_y, mouse_z, Jogador);
 		Jogador.z = Angulo.z;
 		rotate_sprite(buffer, Personagem, Jogador.x, Jogador.y, itofix(GRAUS_PARA_ALLEGRO(Angulo.z)));
@@ -612,12 +697,16 @@ int main(void)
 		DesenharBalas(buffer, Balas, NUM_BALAS);
 		//Textos
 		sprintf(str, "Balas: %d", Jogador.qntBalas);
+		textout_ex(buffer, font, str, 30, 10, makecol(255,0,0), -1);
 		if(Jogador.recarregando) 
-		{ 
 			textout_ex(buffer, font, "Recarregando, Aguarde..", Jogador.x-30, Jogador.y-10, makecol(255,0,0), -1);
-		}
-		textout_ex(buffer, font, str, 30, 10, makecol(255,0,0), 0);
 		Barra_Vida(buffer, Jogador);
+		Barra_Vida_Inimigo(buffer, Inimigo);
+		// Morto
+		if(Jogador.vida <= 0)
+			textout_ex(buffer, font, "Voce Perdeu", ALTURA_TELA/2, LARGURA_TELA/2, makecol(255,0,0), -1);
+		if(Inimigo.vida <= 0) 
+			textout_ex(buffer, font, "Voce Venceu", ALTURA_TELA/2, LARGURA_TELA/2, makecol(255,0,0), -1);
 		//Fim
 		draw_sprite(screen, buffer, 0, 0);
 		rest(1);
