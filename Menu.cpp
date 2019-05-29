@@ -12,6 +12,7 @@
 #define NPC 1
 #define MAX_COLISOES 5
 // Timers
+volatile int TimerMenu;
 volatile int TimerOuvirPassos;
 volatile int TimerTiros[MAX_PLAYERS];
 volatile int TimerRecarregar[MAX_PLAYERS];
@@ -400,16 +401,28 @@ void Desenhar_Menu(BITMAP *buffer, FONT *Fonte, TMenu Menu)
 {
 	if(Menu.local == 0)
 	{
-		textout_centre_ex(buffer, Fonte, "INICIAR JOGO", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(-1, -1, -1));
-		textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE JOGO", ALTURA_TELA / 2, 275, makecol(255, 0, 0), makecol(-1, -1, -1));
-		textout_centre_ex(buffer, Fonte, "SAIR DO JOGO", ALTURA_TELA / 2, 300, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 0) textout_centre_ex(buffer, Fonte, "INICIAR", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(255, 255, 255));
+		else textout_centre_ex(buffer, Fonte, "INICIAR", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(-1, -1, -1));
+		
+		if(Menu.op == 1) textout_centre_ex(buffer, Fonte, "CONFIGURACOES", ALTURA_TELA / 2, 290, makecol(255, 0, 0), makecol(255, 255, 255));
+		else textout_centre_ex(buffer, Fonte, "CONFIGURACOES", ALTURA_TELA / 2, 290, makecol(255, 0, 0), makecol(-1, -1, -1));
+		
+		if(Menu.op == 2) textout_centre_ex(buffer, Fonte, "SAIR", ALTURA_TELA / 2, 330, makecol(255, 0, 0), makecol(255, 255, 255));
+		else textout_centre_ex(buffer, Fonte, "SAIR", ALTURA_TELA / 2, 330, makecol(255, 0, 0), makecol(-1, -1, -1));
 	}
 	else if(Menu.local == 1)
 	{
-		textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE AUDIO", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(-1, -1, -1));
-		textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE VIDEO", ALTURA_TELA/2, 275, makecol(255, 0, 0), makecol(-1, -1, -1));
-		textout_centre_ex(buffer, Fonte, "SENSIBILIDADE", ALTURA_TELA/2, 300, makecol(255, 0, 0), makecol(-1, -1, -1));
-		textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 325, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 0) textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE AUDIO", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(255, 255, 255));
+		else textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE AUDIO", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(-1, -1, -1));
+
+		if(Menu.op == 1) textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE VIDEO", ALTURA_TELA/2, 290, makecol(255, 0, 0), makecol(255, 255, 255));
+		else textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE VIDEO", ALTURA_TELA/2, 290, makecol(255, 0, 0), makecol(-1, -1, -1));
+
+		if(Menu.op == 2) textout_centre_ex(buffer, Fonte, "SENSIBILIDADE", ALTURA_TELA/2, 330, makecol(255, 0, 0), makecol(255, 255, 255));
+		else textout_centre_ex(buffer, Fonte, "SENSIBILIDADE", ALTURA_TELA/2, 330, makecol(255, 0, 0), makecol(-1, -1, -1));
+
+		if(Menu.op == 3) textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 370, makecol(255, 0, 0), makecol(255, 255, 255));
+		else textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 370, makecol(255, 0, 0), makecol(-1, -1, -1));
 	}
 }
 
@@ -432,6 +445,10 @@ void incrementa_TimerRecarregar()
 	if(RodarTimerRecarregar[playerid] == true) TimerRecarregar[playerid]++;
 	if(RodarTimerRecarregar[NPC] == true) TimerRecarregar[NPC]++;
 }
+void incrementa_TimerMenu()
+{
+	TimerMenu++;
+}
 END_OF_FUNCTION(incrementa_TimerRecarregar)
 
 int main(void)
@@ -452,6 +469,8 @@ int main(void)
 	Menu.op = 0;
 	Menu.local = 0;
 	Menu.click = false;
+	TimerMenu = 0;
+
 	// Imagens no Menu
 	BITMAP *tela_menu = create_bitmap(ALTURA_TELA,LARGURA_TELA);
 	BITMAP *background = load_bitmap("Imagens/Outros/menu.bmp", NULL);
@@ -462,6 +481,9 @@ int main(void)
 	myfont = load_font("Fontes/Elephant.pcx", palette, NULL);
 	if (!myfont)
 		printf("Couldn't load font!\n");
+
+	LOCK_FUNCTION(incrementa_TimerMenu);
+	install_int_ex(incrementa_TimerMenu, MSEC_TO_TIMER(40));
 	// Loop Menu
 	while(!Menu.sair)
 	{
@@ -469,12 +491,56 @@ int main(void)
 		masked_blit(background, tela_menu, 0, 0, 0, 0, ALTURA_TELA, LARGURA_TELA);
 		Desenhar_Menu(tela_menu, myfont, Menu);
 		// Keys no Menu
-		if(key[KEY_DOWN] && !Menu.click) Menu.op++;
-		if(key[KEY_UP] && !Menu.click) Menu.op--;
+		if(TimerMenu > 1)
+		{
+			if(key[KEY_DOWN] && !Menu.click) Menu.op++;
+			if(key[KEY_UP] && !Menu.click) Menu.op--;
+			Menu.click = false;
+			TimerMenu = 0;
+		}
 		if(key[KEY_ESC]) Menu.sair = true;
 		if(key[KEY_ENTER]) Menu.click = true;
+
+		// Parte de Configurações de Audio
+
+
+		// Parte de Configurações de Video
+
+		// Sensibilidade
+
+		// Botao Voltar
+		if(Menu.local == 1 && Menu.op == 3 && Menu.click)
+		{
+			Menu.click = false;
+			Menu.op = 0;
+			Menu.local--;
+		}
+		// Parte Principal Menu
+		if(Menu.op < 0)
+		{
+			if(Menu.local == 0) Menu.op = 2;
+			else if(Menu.local == 1) Menu.op = 3;
+		}
+		if(Menu.op > 2 && Menu.local == 0)
+		{
+			Menu.op = 0;
+		}
+		else if(Menu.op > 3 && Menu.local == 1)
+		{
+			Menu.op = 0;
+		}
 		// Opcoes do Menu
-		if(Menu.op == 0 && Menu.click)
+		if(Menu.op == 2 && Menu.click && Menu.local == 0)
+		{
+			Menu.sair = true;
+		}
+		else if(Menu.op == 1 && Menu.click && Menu.local == 0)
+		{
+			Menu.click = false;
+			Menu.local++;
+			Menu.op = 0;
+		}
+		else if(Menu.op == 0 && Menu.click && Menu.local == 0)
 		{
 			// Inicializando os configuracoes do Jogo
 			Init_Colisoes();
