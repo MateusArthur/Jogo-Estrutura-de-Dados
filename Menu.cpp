@@ -186,8 +186,6 @@ TInimigos CalcularAnguloInimigo(float Jogador_x, float Jogador_y, float Jogador_
 	return Angulo;
 }
 
-// Destruir Tiros
-
 TPersonagem SubtrairDist(float Mira_x, float Mira_y, float Mira_z, TProjeteis Tiro)
 {
 	TPersonagem diferenca;
@@ -330,21 +328,25 @@ void Init_Colisoes()
 	Colisoes[0][1] = 100;
 	Colisoes[0][2] = Colisoes[0][0]+99;
 	Colisoes[0][3] = Colisoes[0][1]+99;
+
 	// Quadrado 2
 	Colisoes[1][0] = Colisoes[0][0];
 	Colisoes[1][1] = 400;
 	Colisoes[1][2] = Colisoes[1][0]+99;
 	Colisoes[1][3] = Colisoes[1][1]+99;
+
 	// Quadrado 3
 	Colisoes[2][0] = 350;
 	Colisoes[2][1] = 250;
 	Colisoes[2][2] = Colisoes[2][0]+99;
 	Colisoes[2][3] = Colisoes[2][1]+99;
+
 	// Quadrado 4
 	Colisoes[3][0] = 550;
 	Colisoes[3][1] = Colisoes[0][1];
 	Colisoes[3][2] = Colisoes[3][0]+99;
 	Colisoes[3][3] = Colisoes[3][1]+99;
+	
 	// Quadrado 5
 	Colisoes[4][0] = Colisoes[3][0];
 	Colisoes[4][1] = Colisoes[1][1];
@@ -419,24 +421,24 @@ void Desenhar_Menu(BITMAP *buffer, FONT *Fonte, TMenu Menu)
 {
 	if(Menu.local == 0)
 	{
-		if(Menu.op == 0) textout_centre_ex(buffer, Fonte, "INICIAR", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(255, 255, 255));
-		else textout_centre_ex(buffer, Fonte, "INICIAR", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 0) textout_centre_ex(buffer, Fonte, "INICIAR", ALTURA_TELA/2, 250, makecol(255, 255, 255), makecol(0,255,127));
+		else textout_centre_ex(buffer, Fonte, "INICIAR", ALTURA_TELA/2, 250, makecol(255, 255, 255), makecol(-1, -1, -1));
 		
-		if(Menu.op == 1) textout_centre_ex(buffer, Fonte, "CONFIGURACOES", ALTURA_TELA / 2, 290, makecol(255, 0, 0), makecol(255, 255, 255));
-		else textout_centre_ex(buffer, Fonte, "CONFIGURACOES", ALTURA_TELA / 2, 290, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 1) textout_centre_ex(buffer, Fonte, "CONFIGURACOES", ALTURA_TELA / 2, 290, makecol(255, 255, 255), makecol(0,255,127));
+		else textout_centre_ex(buffer, Fonte, "CONFIGURACOES", ALTURA_TELA / 2, 290, makecol(255, 255, 255), makecol(-1, -1, -1));
 		
-		if(Menu.op == 2) textout_centre_ex(buffer, Fonte, "SAIR", ALTURA_TELA / 2, 330, makecol(255, 0, 0), makecol(255, 255, 255));
-		else textout_centre_ex(buffer, Fonte, "SAIR", ALTURA_TELA / 2, 330, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 2) textout_centre_ex(buffer, Fonte, "SAIR", ALTURA_TELA / 2, 330, makecol(255, 255, 255), makecol(0,255,127));
+		else textout_centre_ex(buffer, Fonte, "SAIR", ALTURA_TELA / 2, 330, makecol(255, 255, 255), makecol(-1, -1, -1));
 	}
 	else if(Menu.local == 1)
 	{
-		if(Menu.op == 0) textout_centre_ex(buffer, Fonte, "VOLUME", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(255, 255, 255));
-		else textout_centre_ex(buffer, Fonte, "VOLUME", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 0) textout_centre_ex(buffer, Fonte, "VOLUME", ALTURA_TELA/2, 250, makecol(255, 255, 255), makecol(0,255,127));
+		else textout_centre_ex(buffer, Fonte, "VOLUME", ALTURA_TELA/2, 250, makecol(255, 255, 255), makecol(-1, -1, -1));
 		
-		textprintf_right_ex(buffer, Fonte, ALTURA_TELA-20, 250, makecol(255, 0, 0), -1, "< %d >", Menu.volume);
+		textprintf_right_ex(buffer, Fonte, ALTURA_TELA-20, 250, makecol(255, 255, 255), -1, "< %d >", Menu.volume);
 
-		if(Menu.op == 1) textout_centre_ex(buffer, Fonte, "RESOLUCAO", ALTURA_TELA/2, 290, makecol(255, 0, 0), makecol(255, 255, 255));
-		else textout_centre_ex(buffer, Fonte, "RESOLUCAO", ALTURA_TELA/2, 290, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 1) textout_centre_ex(buffer, Fonte, "RESOLUCAO", ALTURA_TELA/2, 290, makecol(255, 255, 255), makecol(0,255,127));
+		else textout_centre_ex(buffer, Fonte, "RESOLUCAO", ALTURA_TELA/2, 290, makecol(255, 255, 255), makecol(-1, -1, -1));
 		
 		char str[20];
 		if(Menu.resolucao == 0)
@@ -444,15 +446,15 @@ void Desenhar_Menu(BITMAP *buffer, FONT *Fonte, TMenu Menu)
 		else
 			sprintf(str, "< Tela Cheia >");
 
-		textout_right_ex(buffer, Fonte, str, ALTURA_TELA-20, 290, makecol(255, 0, 0), -1);
+		textout_right_ex(buffer, Fonte, str, ALTURA_TELA-20, 290, makecol(255, 255, 255), -1);
 
-		if(Menu.op == 2) textout_centre_ex(buffer, Fonte, "SENSIBILIDADE", ALTURA_TELA/2, 330, makecol(255, 0, 0), makecol(255, 255, 255));
-		else textout_centre_ex(buffer, Fonte, "SENSIBILIDADE", ALTURA_TELA/2, 330, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 2) textout_centre_ex(buffer, Fonte, "SENSIBILIDADE", ALTURA_TELA/2, 330, makecol(255, 255, 255), makecol(0,255,127));
+		else textout_centre_ex(buffer, Fonte, "SENSIBILIDADE", ALTURA_TELA/2, 330, makecol(255, 255, 255), makecol(-1, -1, -1));
 
-		textprintf_right_ex(buffer, Fonte, ALTURA_TELA-20, 330, makecol(255, 0, 0), -1, "< %d >", Menu.sensi);
+		textprintf_right_ex(buffer, Fonte, ALTURA_TELA-20, 330, makecol(255, 255, 255), -1, "< %d >", Menu.sensi);
 
-		if(Menu.op == 3) textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 370, makecol(255, 0, 0), makecol(255, 255, 255));
-		else textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 370, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 3) textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 370, makecol(255, 255, 255), makecol(0,255,127));
+		else textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 370, makecol(255, 255, 255), makecol(-1, -1, -1));
 	}
 }
 
