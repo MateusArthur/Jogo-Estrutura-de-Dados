@@ -4,6 +4,7 @@
 #include <math.h>
 
 // Atributos da tela
+
 #define LARGURA_TELA 600
 #define ALTURA_TELA 800
 #define GRAUS_PARA_ALLEGRO(x) x/1.40625  //conversão
@@ -11,7 +12,9 @@
 #define playerid 0
 #define NPC 1
 #define MAX_COLISOES 5
+
 // Timers
+
 volatile int TimerMenu;
 volatile int TimerOuvirPassos;
 volatile int TimerTiros[MAX_PLAYERS];
@@ -72,6 +75,9 @@ struct TMenu
 	int op;
 	int max_op;
 	int local;
+	int resolucao;
+	int volume;
+	int sensi;
 	bool sair = false;
 	bool click = false;
 	bool ativo = true;
@@ -154,6 +160,7 @@ TPersonagem Subtrair(float Mira_x, float Mira_y, float Mira_z, TPersonagem Jogad
 	diferenca.z = Mira_z - Jogador.z;
 	return diferenca;
 }
+
 TPersonagem CalcularAngulo(float Mira_x, float Mira_y, float Mira_z, TPersonagem Jogador)
 {
 	TPersonagem diferenca = Subtrair(Mira_x, Mira_y, Mira_z, Jogador);
@@ -189,10 +196,12 @@ TPersonagem SubtrairDist(float Mira_x, float Mira_y, float Mira_z, TProjeteis Ti
 	diferenca.z = Mira_z - 0;
 	return diferenca;
 }
+
 float Magnitude(TPersonagem vec)
 {
 	return sqrtf(vec.x*vec.x + vec.y + vec.y + vec.z*vec.z);
 }
+
 float Distancia(TProjeteis Balas)
 {
 	TPersonagem diferenca = SubtrairDist(Balas.tiro_x, Balas.tiro_y, 0, Balas);
@@ -208,6 +217,7 @@ void InitBalas(TProjeteis balas[], int tamanho)
 		balas[i].ativo = false;
 	}
 }
+
 void AtiraBalas(TProjeteis balas[], int tamanho, TPersonagem jogador)
 {
 	for(int i = 0; i<tamanho; i++)
@@ -224,6 +234,7 @@ void AtiraBalas(TProjeteis balas[], int tamanho, TPersonagem jogador)
 		}
 	}
 }
+
 void AtiraBalasInimigos(TProjeteis balas[], int tamanho, TInimigos Inimigo, TPersonagem Jogador)
 {
 	for(int i = 0; i<tamanho; i++)
@@ -240,6 +251,7 @@ void AtiraBalasInimigos(TProjeteis balas[], int tamanho, TInimigos Inimigo, TPer
 		}
 	}
 }
+
 void AtualizarBalas(TProjeteis balas[], int tamanho, TPersonagem Jogador, TInimigos Inimigo)
 {
 	for(int i = 0; i<tamanho; i++)
@@ -251,7 +263,6 @@ void AtualizarBalas(TProjeteis balas[], int tamanho, TPersonagem Jogador, TInimi
 			balas[i].y += balas[i].velocidade*sin(bullet_direction);
 			for(int j = 0; j < MAX_COLISOES; j++)
 			{
-				//
 				if(balas[i].x >= Colisoes[j][0]-20 && balas[i].y <= Colisoes[j][3]-29 && balas[i].x <= Colisoes[j][2]-25 && balas[i].y >= Colisoes[j][1]-35)
 				{
 					balas[i].ativo = false;
@@ -281,6 +292,7 @@ void AtualizarBalas(TProjeteis balas[], int tamanho, TPersonagem Jogador, TInimi
 		}
 	}
 }
+
 void DesenharBalas(BITMAP *buffer, TProjeteis balas[], int tamanho) 
 {
 	for(int i = 0; i<tamanho; i++)
@@ -293,6 +305,7 @@ void DesenharBalas(BITMAP *buffer, TProjeteis balas[], int tamanho)
 		}
 	}
 }
+
 //Funcoes de vida
 void Barra_Vida_Inimigo(BITMAP *buffer, TInimigos Inimigo) 
 {
@@ -300,6 +313,7 @@ void Barra_Vida_Inimigo(BITMAP *buffer, TInimigos Inimigo)
 	rectfill(buffer, Inimigo.x-5+1, Inimigo.y-10, Inimigo.x+nm, Inimigo.y, 0xFF0000);
 	rect(buffer, Inimigo.x-5, Inimigo.y-10, Inimigo.x+93, Inimigo.y, 0x000000);
 }
+
 void Barra_Vida(BITMAP *buffer, TPersonagem Jogador) 
 {
 	int n = (Jogador.vida*150) / Jogador.vidamax;
@@ -308,6 +322,7 @@ void Barra_Vida(BITMAP *buffer, TPersonagem Jogador)
 	rectfill(buffer, LARGURA_TELA-160, 12, LARGURA_TELA-160+n, 15, 0xbbffaa);
 	rect(buffer, LARGURA_TELA-162, 10, LARGURA_TELA-8, 25, 0x000000); 
 }
+
 void Init_Colisoes()
 {
 	// Quadrado 1
@@ -336,6 +351,7 @@ void Init_Colisoes()
 	Colisoes[4][2] = Colisoes[4][0]+99;
 	Colisoes[4][3] = Colisoes[4][1]+99;
 }
+
 //Definir Colisoes
 void Desenhar_Colisoes(BITMAP *buffer)
 {
@@ -379,6 +395,7 @@ bool Checar_VisaoInimigo(TInimigos Inimigo, int Jogador_x, int Jogador_y)
 	}
 	return false;
 }
+
 int SetarPos_x(TInimigos Inimigo)
 {
 	if(Inimigo.x < Inimigo.escutou_x)
@@ -387,6 +404,7 @@ int SetarPos_x(TInimigos Inimigo)
 		return Inimigo.x -= 2;
 	return Inimigo.x;
 }
+
 int SetarPos_y(TInimigos Inimigo)
 {
 	if(Inimigo.y < Inimigo.escutou_y)
@@ -412,14 +430,26 @@ void Desenhar_Menu(BITMAP *buffer, FONT *Fonte, TMenu Menu)
 	}
 	else if(Menu.local == 1)
 	{
-		if(Menu.op == 0) textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE AUDIO", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(255, 255, 255));
-		else textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE AUDIO", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 0) textout_centre_ex(buffer, Fonte, "VOLUME", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(255, 255, 255));
+		else textout_centre_ex(buffer, Fonte, "VOLUME", ALTURA_TELA/2, 250, makecol(255, 0, 0), makecol(-1, -1, -1));
+		
+		textprintf_right_ex(buffer, Fonte, ALTURA_TELA-20, 250, makecol(255, 0, 0), -1, "< %d >", Menu.volume);
 
-		if(Menu.op == 1) textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE VIDEO", ALTURA_TELA/2, 290, makecol(255, 0, 0), makecol(255, 255, 255));
-		else textout_centre_ex(buffer, Fonte, "CONFIGURACOES DE VIDEO", ALTURA_TELA/2, 290, makecol(255, 0, 0), makecol(-1, -1, -1));
+		if(Menu.op == 1) textout_centre_ex(buffer, Fonte, "RESOLUCAO", ALTURA_TELA/2, 290, makecol(255, 0, 0), makecol(255, 255, 255));
+		else textout_centre_ex(buffer, Fonte, "RESOLUCAO", ALTURA_TELA/2, 290, makecol(255, 0, 0), makecol(-1, -1, -1));
+		
+		char str[20];
+		if(Menu.resolucao == 0)
+			sprintf(str, "< Modo Janela >");
+		else
+			sprintf(str, "< Tela Cheia >");
+
+		textout_right_ex(buffer, Fonte, str, ALTURA_TELA-20, 290, makecol(255, 0, 0), -1);
 
 		if(Menu.op == 2) textout_centre_ex(buffer, Fonte, "SENSIBILIDADE", ALTURA_TELA/2, 330, makecol(255, 0, 0), makecol(255, 255, 255));
 		else textout_centre_ex(buffer, Fonte, "SENSIBILIDADE", ALTURA_TELA/2, 330, makecol(255, 0, 0), makecol(-1, -1, -1));
+
+		textprintf_right_ex(buffer, Fonte, ALTURA_TELA-20, 330, makecol(255, 0, 0), -1, "< %d >", Menu.sensi);
 
 		if(Menu.op == 3) textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 370, makecol(255, 0, 0), makecol(255, 255, 255));
 		else textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 370, makecol(255, 0, 0), makecol(-1, -1, -1));
@@ -451,6 +481,23 @@ void incrementa_TimerMenu()
 }
 END_OF_FUNCTION(incrementa_TimerRecarregar)
 
+void SalvarConf(TMenu Menu)
+{
+	FILE * pFile;
+	pFile = fopen("conf.dat","w");
+	char buffer[16] = {0};
+	if (pFile!=NULL)
+	{
+		sprintf(buffer, "%d\n", Menu.volume);
+		fputs(buffer, pFile);
+		sprintf(buffer, "%d\n", Menu.resolucao);
+  		fputs(buffer, pFile);
+  		sprintf(buffer, "%d\n", Menu.sensi);
+  		fputs(buffer, pFile);
+		fclose(pFile);
+	}
+}
+
 int main(void)
 {
 	// Inicializando Allegro
@@ -458,19 +505,45 @@ int main(void)
 	install_timer();
 	install_keyboard();
 	install_mouse();
-	set_mouse_speed(20, 20);
 	set_color_depth(32);
-	set_gfx_mode(GFX_AUTODETECT_WINDOWED, ALTURA_TELA, LARGURA_TELA, 0, 0);
 	set_window_title("Counter Strike 2D");
 	install_sound(DIGI_AUTODETECT, MIDI_AUTODETECT, NULL);
 
+	//Carregar configuracoes salvas
+	FILE * pFile;
+	pFile = fopen("conf.dat","r");
+	int arm[3];
+	int i = 0;
+	if(pFile == NULL)
+	{
+		printf("[COUNTER STRIKE ALLEGRO]: Erro ao ler as configuracoes de usuario!\n");
+		return 0;
+	}
+	else
+	{
+		while((fscanf(pFile, "%d\n", &arm[i])) != EOF)
+			i++;
+	}
+	fclose (pFile);
+
 	// Carregar estrutura do menu
 	TMenu Menu;
+	Menu.click = false;
 	Menu.op = 0;
 	Menu.local = 0;
-	Menu.click = false;
 	TimerMenu = 0;
-
+	Menu.volume = arm[0];
+	Menu.resolucao = arm[1];
+	Menu.sensi = arm[2];
+	
+	// Configuracoes do usuario salva
+	set_volume(Menu.volume, Menu.volume);
+	set_mouse_speed(Menu.sensi, Menu.sensi);
+	if(Menu.resolucao == 0)
+		set_gfx_mode(GFX_AUTODETECT_WINDOWED, ALTURA_TELA, LARGURA_TELA, 0, 0);
+	else
+		set_gfx_mode(GFX_AUTODETECT_FULLSCREEN, ALTURA_TELA, LARGURA_TELA, 0, 0);
+	
 	// Imagens no Menu
 	BITMAP *tela_menu = create_bitmap(ALTURA_TELA,LARGURA_TELA);
 	BITMAP *background = load_bitmap("Imagens/Outros/menu.bmp", NULL);
@@ -495,24 +568,74 @@ int main(void)
 		{
 			if(key[KEY_DOWN] && !Menu.click) Menu.op++;
 			if(key[KEY_UP] && !Menu.click) Menu.op--;
-			Menu.click = false;
+			if(key[KEY_RIGHT] && !Menu.click && Menu.local == 1)
+			{
+				// Volume
+				if(Menu.op == 0)
+				{
+					Menu.volume++;
+					if(Menu.volume > 255)
+						Menu.volume = 255;
+					set_volume(Menu.volume, Menu.volume);
+				} // RESOLUCAO
+				else if(Menu.op == 1)
+				{
+					if(Menu.resolucao == 1)
+					{
+						Menu.resolucao = 0;
+						set_gfx_mode(GFX_AUTODETECT_WINDOWED, ALTURA_TELA, LARGURA_TELA, 0, 0);
+					}
+					else
+					{
+						Menu.resolucao = 1;
+						set_gfx_mode(GFX_AUTODETECT_FULLSCREEN, ALTURA_TELA, LARGURA_TELA, 0, 0);
+					}
+				} // sensibilidade
+				else if(Menu.op == 2) 
+				{
+					Menu.sensi++;
+					set_mouse_speed(Menu.sensi, Menu.sensi);
+				}
+			}
+			if(key[KEY_LEFT] && !Menu.click && Menu.local == 1)
+			{
+				// Volume
+				if(Menu.op == 0)
+				{
+					Menu.volume--;
+					if(Menu.volume < 0)
+						Menu.volume = 0;
+					set_volume(Menu.volume, Menu.volume);
+				} // RESOLUCAO
+				else if(Menu.op == 1)
+				{
+					if(Menu.resolucao == 1)
+					{
+						Menu.resolucao = 0;
+						set_gfx_mode(GFX_AUTODETECT_WINDOWED, ALTURA_TELA, LARGURA_TELA, 0, 0);
+					}
+					else
+					{
+						Menu.resolucao = 1;
+						set_gfx_mode(GFX_AUTODETECT_FULLSCREEN, ALTURA_TELA, LARGURA_TELA, 0, 0);
+					}
+				} // sensibilidade
+				else if(Menu.op == 2) 
+				{
+					Menu.sensi--;
+					set_mouse_speed(Menu.sensi, Menu.sensi);
+				}
+			}
+			if(key[KEY_ESC]) Menu.sair = true;
+			if(key[KEY_ENTER]) Menu.click = true;
 			TimerMenu = 0;
 		}
-		if(key[KEY_ESC]) Menu.sair = true;
-		if(key[KEY_ENTER]) Menu.click = true;
-
-		// Parte de Configurações de Audio
-
-
-		// Parte de Configurações de Video
-
-		// Sensibilidade
 
 		// Botao Voltar
-		if(Menu.local == 1 && Menu.op == 3 && Menu.click)
+		if(Menu.local == 1 && Menu.op == 3 && Menu.click == true)
 		{
 			Menu.click = false;
-			Menu.op = 0;
+			Menu.op = 1;
 			Menu.local--;
 		}
 		// Parte Principal Menu
@@ -542,6 +665,8 @@ int main(void)
 		}
 		else if(Menu.op == 0 && Menu.click && Menu.local == 0)
 		{
+			Menu.click = false;
+			Menu.op = 0;
 			// Inicializando os configuracoes do Jogo
 			Init_Colisoes();
 			// INICIALIZAÇÃO DE OBJETOS
@@ -605,8 +730,8 @@ int main(void)
 
 			// Carregar Imagens
 			BITMAP *buffer = create_bitmap(ALTURA_TELA,LARGURA_TELA);
-			BITMAP *Personagem = load_bitmap("Imagens/Jogadores/player_c.bmp", NULL);
-			BITMAP *InimigoBMP = load_bitmap("Imagens/Jogadores/player_c.bmp", NULL);
+			BITMAP *Personagem = load_bitmap("Imagens/Jogadores/player.bmp", NULL);
+			BITMAP *InimigoBMP = load_bitmap("Imagens/Jogadores/player.bmp", NULL);
 			BITMAP *Mira = load_bitmap("Imagens/Outros/Mira.bmp", NULL);
 			
 			//Carregar a mira
@@ -826,10 +951,8 @@ int main(void)
 				Barra_Vida(buffer, Jogador);
 				Barra_Vida_Inimigo(buffer, Inimigo);
 				// Morto
-				if(Jogador.vida <= 0)
-					textout_ex(buffer, font, "Voce Perdeu", ALTURA_TELA/2, LARGURA_TELA/2, makecol(255,0,0), -1);
-				if(Inimigo.vida <= 0) 
-					textout_ex(buffer, font, "Voce Venceu", ALTURA_TELA/2, LARGURA_TELA/2, makecol(255,0,0), -1);
+				if(Jogador.vida <= 0 || Inimigo.vida <= 0)
+					sair = true;
 				//Fim
 				draw_sprite(screen, buffer, 0, 0);
 				rest(1);
@@ -845,7 +968,8 @@ int main(void)
 		draw_sprite(screen, tela_menu, 0, 0);
 		clear(tela_menu);
 	}
-	//destroy_font(myfont);
+	SalvarConf(Menu);
+	destroy_font(myfont);
 	destroy_bitmap(background);
 	destroy_bitmap(tela_menu);
   	return 0;
