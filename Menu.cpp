@@ -78,6 +78,7 @@ struct TMenu
 	int resolucao;
 	int volume;
 	int sensi;
+	int load;
 	bool sair = false;
 	bool click = false;
 	bool ativo = true;
@@ -416,6 +417,19 @@ int SetarPos_y(TInimigos Inimigo)
 	return Inimigo.y;
 }
 
+//Desenhar Loading 
+
+void Desenhar_Loading(BITMAP *buffer, FONT *Fonte, TMenu Menu) 
+{
+	if(Menu.load == 1)
+		textout_centre_ex(buffer, Fonte, "LOADING.", ALTURA_TELA/2, 250, makecol(255, 255, 255), makecol(-1, -1, -1));
+	else if(Menu.load == 2)
+		textout_centre_ex(buffer, Fonte, "LOADING..", ALTURA_TELA/2, 250, makecol(255, 255, 255), makecol(-1, -1, -1));
+	else if(Menu.load == 3)
+		textout_centre_ex(buffer, Fonte, "LOADING...", ALTURA_TELA/2, 250, makecol(255, 255, 255), makecol(-1, -1, -1));
+
+}
+
 //Desenhar Menu
 void Desenhar_Menu(BITMAP *buffer, FONT *Fonte, TMenu Menu)
 {
@@ -456,6 +470,14 @@ void Desenhar_Menu(BITMAP *buffer, FONT *Fonte, TMenu Menu)
 		if(Menu.op == 3) textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 370, makecol(255, 255, 255), makecol(0,255,127));
 		else textout_centre_ex(buffer, Fonte, "VOLTAR", ALTURA_TELA/2, 370, makecol(255, 255, 255), makecol(-1, -1, -1));
 	}
+	else if(Menu.local == 2)
+	{
+		if(Menu.op == 0) textout_centre_ex(buffer, Fonte, "RETOMAR JOGO", ALTURA_TELA/2, 250, makecol(255, 255, 255), makecol(0,255,127));
+		else textout_centre_ex(buffer, Fonte, "RETOMAR JOGO", ALTURA_TELA/2, 250, makecol(255, 255, 255), makecol(-1, -1, -1));
+		
+		if(Menu.op == 1) textout_centre_ex(buffer, Fonte, "SAIR PARA O MENU", ALTURA_TELA / 2, 290, makecol(255, 255, 255), makecol(0,255,127));
+		else textout_centre_ex(buffer, Fonte, "SAIR PARA O MENU", ALTURA_TELA / 2, 290, makecol(255, 255, 255), makecol(-1, -1, -1));
+	}
 }
 
 // Funções Timer;
@@ -477,6 +499,7 @@ void incrementa_TimerRecarregar()
 	if(RodarTimerRecarregar[playerid] == true) TimerRecarregar[playerid]++;
 	if(RodarTimerRecarregar[NPC] == true) TimerRecarregar[NPC]++;
 }
+
 void incrementa_TimerMenu()
 {
 	TimerMenu++;
@@ -628,7 +651,6 @@ int main(void)
 					set_mouse_speed(Menu.sensi, Menu.sensi);
 				}
 			}
-			if(key[KEY_ESC]) Menu.sair = true;
 			if(key[KEY_ENTER]) Menu.click = true;
 			TimerMenu = 0;
 		}
@@ -681,6 +703,7 @@ int main(void)
 			int vel = 5;
 			char str[10];
 			bool sair = false;
+			int pressEsc = false;
 			bool TocandoPassos = false;
 			bool TocandoTiros[MAX_PLAYERS];
 			bool InimigoMovimentando = false;
@@ -698,7 +721,6 @@ int main(void)
 			RodarTimerTiro[playerid] = false;
 			SalvarVida[playerid] = 200;
 			// Inicializar Variaveis Bot's
-			//BOT 1
 			Inimigo.x = 670;
 			Inimigo.y = 300;
 			Inimigo.qntBalas = 30;
@@ -728,8 +750,6 @@ int main(void)
 			install_int_ex(incrementa_TimerTiros, MSEC_TO_TIMER(80));
 			install_int_ex(incrementa_TimerRecarregar, SECS_TO_TIMER(1));
 
-			// Icone do Jogo
-
 			// Carregar Imagens
 			BITMAP *buffer = create_bitmap(ALTURA_TELA,LARGURA_TELA);
 			BITMAP *Personagem = load_bitmap("Imagens/Jogadores/player.bmp", NULL);
@@ -742,223 +762,264 @@ int main(void)
 			// MAPA
 			int linhas, colunas;
 			int **mapa = Carregar_Mapa("Mapas/mapa.txt", &linhas, &colunas);
-			//Sons
 			
+			//Sons
 			SAMPLE *Caminhar = load_sample("Sons/Jogadores/Correndo.wav");
 			SAMPLE *STiro = load_sample("Sons/Jogadores/Tiro.wav");
-			// Looping do Jogo
 
+			// Looping do Jogo
 			while(!sair)
 			{
 				if(key[KEY_ESC])
-					sair = true;
-				int ax,ay;
-				ax = Jogador.x;
-				ay = Jogador.y;
-				if(key[KEY_D] && !key[KEY_LSHIFT]) // Direita
 				{
-					Jogador.x += 2;
-					Inimigo.escutou_x = Jogador.x;
-					if(!TocandoPassos)
+					pressEsc = true;
+					Menu.local = 2;
+					Menu.op = 0;
+					Menu.click = false;
+					TimerMenu = 0;
+				}
+				if(pressEsc)
+				{
+					masked_blit(background, buffer, 0, 0, 0, 0, ALTURA_TELA, LARGURA_TELA);
+					Desenhar_Menu(buffer, myfont, Menu);
+					if(TimerMenu > 1)
 					{
-						TocandoPassos = true;
+						if(key[KEY_DOWN] && !Menu.click) Menu.op++;
+						if(key[KEY_UP] && !Menu.click) Menu.op--;
+						TimerMenu = 0;
 					}
-				}
-				else if(key[KEY_D] && key[KEY_LSHIFT]) // Direita
-				{
-					Jogador.x += 1;
-				}
-				if(key[KEY_A] && !key[KEY_LSHIFT]) // Esquerda
-				{ 
-					Jogador.x -= 2;
-					Inimigo.escutou_x = Jogador.x;
-					if(!TocandoPassos)
+					if(Menu.op > 1)
+						Menu.op = 0;
+					if(Menu.op < 0)
+						Menu.op = 1;
+					if(key[KEY_ENTER]) Menu.click = true;
+					if(Menu.local == 2 && Menu.op == 0 && Menu.click)
 					{
-						TocandoPassos = true;
+						Menu.local = 0;
+						Menu.click = false;
+						pressEsc = false;
 					}
-				}
-				else if(key[KEY_A] && key[KEY_LSHIFT]) // Esquerda
-				{ 
-					Jogador.x -= 1;
-				}
-				if(key[KEY_W] && !key[KEY_LSHIFT]) // Cima
-				{ 
-					Jogador.y -= 2;
-					Inimigo.escutou_y = Jogador.y;
-					if(!TocandoPassos)
+					else if(Menu.local == 2 && Menu.op == 1 && Menu.click)
 					{
-						TocandoPassos = true;
+						Menu.local = 0;
+						Menu.op = 0;
+						Menu.click = false;
+						sair = true;
 					}
-				}
-				else if(key[KEY_W] && key[KEY_LSHIFT]) // Cima
-				{ 
-					Jogador.y -= 1;
-				}
-				if(key[KEY_S] && !key[KEY_LSHIFT]) // Baixo
-				{
-					Jogador.y += 2;
-					Inimigo.escutou_y = Jogador.y;
-					if(!TocandoPassos)
-					{
-						TocandoPassos = true;
-					}
-				}
-				else if(key[KEY_S] && key[KEY_LSHIFT])
-				{
-					Jogador.y += 1;
-				}
-				if(key[KEY_R] && Jogador.qntBalas < 30 && !Jogador.recarregando) 
-				{
-					Jogador.recarregando = true;
-					RodarTimerRecarregar[playerid] = true;
-				}
-				if(TimerRecarregar[playerid] > 3 && Jogador.recarregando) 
-				{
-					Jogador.qntBalas = 30;
-					TimerRecarregar[playerid] = 0;
-					Jogador.recarregando = false;
-					RodarTimerRecarregar[playerid] = false;
-				} 
-				if(TimerOuvirPassos > 1)
-				{
-					if(key[KEY_W] || key[KEY_A] || key[KEY_D] || key[KEY_S])
-					{
-						if(!key[KEY_LSHIFT])
-						{
-							play_sample(Caminhar, 255, 128, 1000, 0);
-							play_sample(Caminhar, 255, 128, 1000, 0);
-							TimerOuvirPassos = 0;
-						}
-						else
-						{
-							TocandoPassos = false;
-							TimerOuvirPassos = 0;
-						}
-					}
-				}
-				if(TimerTiros[playerid] > 1) // 6 Tiro por tiro 1 Spray
-				{
-					if(TocandoTiros[playerid])
-					{
-						TocandoTiros[playerid] = false;
-						TimerTiros[playerid] = 0;
-						RodarTimerTiro[playerid] = false;
-					}
-				}
-				if(mouse_b)
-				{
-					if(!TocandoTiros[playerid] && Jogador.qntBalas != 0)
-					{	
-						play_sample(STiro, 255, 128, 1000, 0);
-						AtiraBalas(Balas, NUM_BALAS, Jogador);
-						Jogador.qntBalas--;
-						TocandoTiros[playerid] =  true;
-						RodarTimerTiro[playerid] = true;
-					}
-				}
-				if(Inimigo.qntBalas == 0 && !Inimigo.recarregando) 
-				{
-					Inimigo.recarregando = true;
-					RodarTimerRecarregar[NPC] = true;
-				}
-				if(TimerRecarregar[NPC] > 3 && Inimigo.recarregando) 
-				{
-					Inimigo.qntBalas = 30;
-					TimerRecarregar[NPC] = 0;
-					Inimigo.recarregando = false;
-					RodarTimerRecarregar[NPC] = false;
-				} 
-				if(TimerTiros[NPC] > 1) 
-				{
-					if(TocandoTiros[NPC])
-					{
-						TocandoTiros[NPC] = false;
-						TimerTiros[NPC] = 0;
-						RodarTimerTiro[NPC] = false;
-					}
-				}
-				int px = Jogador.x-15;
-				int py = Jogador.y-25;
-				Inimigo.enxergando = Checar_VisaoInimigo(Inimigo, px, py);
-				if(!TocandoTiros[NPC] && Inimigo.qntBalas != 0 && Inimigo.enxergando == true)
-				{
-					play_sample(STiro, 255, 128, 1000, 0);
-					AtiraBalasInimigos(Balas, NUM_BALAS, Inimigo, Jogador);
-					Inimigo.qntBalas--;
-					TocandoTiros[NPC] = true;
-					RodarTimerTiro[NPC] = true;
-				}
-				// Verificar Colisao
-				if(Checar_Colisao(Jogador.x, Jogador.y) || Jogador.y < 0 || Jogador.x < 0 || Jogador.y >= 550 || Jogador.x > 740) 
-				{
-					Jogador.x = ax;
-					Jogador.y = ay;
-				}
-				if(Inimigo.enxergando)
-				{
-					Inimigo.escutou_x = -1;
-					Inimigo.escutou_y = -1;
+					draw_sprite(screen, buffer, 0, 0);
+					rest(1);
+					clear(buffer);
 				}
 				else
 				{
-					int arm_x = 0;
-					int arm_y = 0;
-					if(Inimigo.escutou_x != -1 && Inimigo.x != Inimigo.escutou_x)
+					int ax,ay;
+					ax = Jogador.x;
+					ay = Jogador.y;
+					if(key[KEY_D] && !key[KEY_LSHIFT]) // Direita
 					{
-						arm_x = SetarPos_x(Inimigo);
-						if(Checar_Colisao(arm_x, Inimigo.y))
+						Jogador.x += 2;
+						Inimigo.escutou_x = Jogador.x;
+						if(!TocandoPassos)
 						{
-							Inimigo.y += 2;
+							TocandoPassos = true;
 						}
-						else Inimigo.x = arm_x;
 					}
-					else if(Inimigo.x == Inimigo.escutou_x)
+					else if(key[KEY_D] && key[KEY_LSHIFT]) // Direita
+					{
+						Jogador.x += 1;
+					}
+					if(key[KEY_A] && !key[KEY_LSHIFT]) // Esquerda
+					{ 
+						Jogador.x -= 2;
+						Inimigo.escutou_x = Jogador.x;
+						if(!TocandoPassos)
+						{
+							TocandoPassos = true;
+						}
+					}
+					else if(key[KEY_A] && key[KEY_LSHIFT]) // Esquerda
+					{ 
+						Jogador.x -= 1;
+					}
+					if(key[KEY_W] && !key[KEY_LSHIFT]) // Cima
+					{ 
+						Jogador.y -= 2;
+						Inimigo.escutou_y = Jogador.y;
+						if(!TocandoPassos)
+						{
+							TocandoPassos = true;
+						}
+					}
+					else if(key[KEY_W] && key[KEY_LSHIFT]) // Cima
+					{ 
+						Jogador.y -= 1;
+					}
+					if(key[KEY_S] && !key[KEY_LSHIFT]) // Baixo
+					{
+						Jogador.y += 2;
+						Inimigo.escutou_y = Jogador.y;
+						if(!TocandoPassos)
+						{
+							TocandoPassos = true;
+						}
+					}
+					else if(key[KEY_S] && key[KEY_LSHIFT])
+					{
+						Jogador.y += 1;
+					}
+					if(key[KEY_R] && Jogador.qntBalas < 30 && !Jogador.recarregando) 
+					{
+						Jogador.recarregando = true;
+						RodarTimerRecarregar[playerid] = true;
+					}
+					if(TimerRecarregar[playerid] > 3 && Jogador.recarregando) 
+					{
+						Jogador.qntBalas = 30;
+						TimerRecarregar[playerid] = 0;
+						Jogador.recarregando = false;
+						RodarTimerRecarregar[playerid] = false;
+					} 
+					if(TimerOuvirPassos > 1)
+					{
+						if(key[KEY_W] || key[KEY_A] || key[KEY_D] || key[KEY_S])
+						{
+							if(!key[KEY_LSHIFT])
+							{
+								play_sample(Caminhar, 255, 128, 1000, 0);
+								play_sample(Caminhar, 255, 128, 1000, 0);
+								TimerOuvirPassos = 0;
+							}
+							else
+							{
+								TocandoPassos = false;
+								TimerOuvirPassos = 0;
+							}
+						}
+					}
+					if(TimerTiros[playerid] > 1) // 6 Tiro por tiro 1 Spray
+					{
+						if(TocandoTiros[playerid])
+						{
+							TocandoTiros[playerid] = false;
+							TimerTiros[playerid] = 0;
+							RodarTimerTiro[playerid] = false;
+						}
+					}
+					if(mouse_b)
+					{
+						if(!TocandoTiros[playerid] && Jogador.qntBalas != 0)
+						{	
+							play_sample(STiro, 255, 128, 1000, 0);
+							AtiraBalas(Balas, NUM_BALAS, Jogador);
+							Jogador.qntBalas--;
+							TocandoTiros[playerid] =  true;
+							RodarTimerTiro[playerid] = true;
+						}
+					}
+					if(Inimigo.qntBalas == 0 && !Inimigo.recarregando) 
+					{
+						Inimigo.recarregando = true;
+						RodarTimerRecarregar[NPC] = true;
+					}
+					if(TimerRecarregar[NPC] > 3 && Inimigo.recarregando) 
+					{
+						Inimigo.qntBalas = 30;
+						TimerRecarregar[NPC] = 0;
+						Inimigo.recarregando = false;
+						RodarTimerRecarregar[NPC] = false;
+					} 
+					if(TimerTiros[NPC] > 1) 
+					{
+						if(TocandoTiros[NPC])
+						{
+							TocandoTiros[NPC] = false;
+							TimerTiros[NPC] = 0;
+							RodarTimerTiro[NPC] = false;
+						}
+					}
+					int px = Jogador.x-15;
+					int py = Jogador.y-25;
+					Inimigo.enxergando = Checar_VisaoInimigo(Inimigo, px, py);
+					if(!TocandoTiros[NPC] && Inimigo.qntBalas != 0 && Inimigo.enxergando == true)
+					{
+						play_sample(STiro, 255, 128, 1000, 0);
+						AtiraBalasInimigos(Balas, NUM_BALAS, Inimigo, Jogador);
+						Inimigo.qntBalas--;
+						TocandoTiros[NPC] = true;
+						RodarTimerTiro[NPC] = true;
+					}
+					// Verificar Colisao
+					if(Checar_Colisao(Jogador.x, Jogador.y) || Jogador.y < 0 || Jogador.x < 0 || Jogador.y >= 550 || Jogador.x > 740) 
+					{
+						Jogador.x = ax;
+						Jogador.y = ay;
+					}
+					if(Inimigo.enxergando)
+					{
 						Inimigo.escutou_x = -1;
-					if(Inimigo.escutou_y != -1 && Inimigo.y != Inimigo.escutou_y)
-					{
-						arm_y = SetarPos_y(Inimigo);
-						if(Checar_Colisao(Inimigo.x, arm_y))
-						{
-							Inimigo.x += 2;
-						}
-						else Inimigo.y = arm_y;
-					}
-					else if(Inimigo.escutou_y == Inimigo.y)
 						Inimigo.escutou_y = -1;
+					}
+					else
+					{
+						int arm_x = 0;
+						int arm_y = 0;
+						if(Inimigo.escutou_x != -1 && Inimigo.x != Inimigo.escutou_x)
+						{
+							arm_x = SetarPos_x(Inimigo);
+							if(Checar_Colisao(arm_x, Inimigo.y))
+							{
+								Inimigo.y += 2;
+							}
+							else Inimigo.x = arm_x;
+						}
+						else if(Inimigo.x == Inimigo.escutou_x)
+							Inimigo.escutou_x = -1;
+						if(Inimigo.escutou_y != -1 && Inimigo.y != Inimigo.escutou_y)
+						{
+							arm_y = SetarPos_y(Inimigo);
+							if(Checar_Colisao(Inimigo.x, arm_y))
+							{
+								Inimigo.x += 2;
+							}
+							else Inimigo.y = arm_y;
+						}
+						else if(Inimigo.escutou_y == Inimigo.y)
+							Inimigo.escutou_y = -1;
+					}
+					// Fim Colisao
+					Desenhar_Mapa(buffer, mapa, linhas, colunas);
+					// Desenhar Colisões
+					Desenhar_Colisoes(buffer);
+					AtualizarBalas(Balas, NUM_BALAS, Jogador, Inimigo);
+					Jogador.vida = SalvarVida[playerid];
+					Inimigo.vida = SalvarVida[NPC];
+					TPersonagem Angulo = CalcularAngulo(mouse_x, mouse_y, mouse_z, Jogador);
+					Jogador.z = Angulo.z;
+					rotate_sprite(buffer, Personagem, Jogador.x, Jogador.y, itofix(GRAUS_PARA_ALLEGRO(Angulo.z)));
+					TInimigos AnguloInimigo = CalcularAnguloInimigo(Jogador.x, Jogador.y, Jogador.z, Inimigo);
+					if(Inimigo.enxergando) 
+					{
+						Inimigo.z = AnguloInimigo.z;
+						rotate_sprite(buffer, InimigoBMP, Inimigo.x, Inimigo.y, itofix(GRAUS_PARA_ALLEGRO(Inimigo.z)));
+					}
+					else rotate_sprite(buffer, InimigoBMP, Inimigo.x, Inimigo.y, itofix(GRAUS_PARA_ALLEGRO(Inimigo.z)));
+					draw_sprite(buffer, Mira, mouse_x, mouse_y);
+					DesenharBalas(buffer, Balas, NUM_BALAS);
+					//Textos
+					sprintf(str, "Balas: %d", Jogador.qntBalas);
+					textout_ex(buffer, font, str, 30, 10, makecol(255,0,0), -1);
+					if(Jogador.recarregando) 
+						textout_ex(buffer, font, "Recarregando, Aguarde..", Jogador.x-30, Jogador.y-10, makecol(255,0,0), -1);
+					Barra_Vida(buffer, Jogador);
+					Barra_Vida_Inimigo(buffer, Inimigo);
+					// Morto
+					if(Jogador.vida <= 0 || Inimigo.vida <= 0)
+						sair = true;
+					//Fim
+					draw_sprite(screen, buffer, 0, 0);
+					rest(1);
+					clear(buffer);
 				}
-				// Fim Colisao
-				Desenhar_Mapa(buffer, mapa, linhas, colunas);
-				// Desenhar Colisões
-				Desenhar_Colisoes(buffer);
-				AtualizarBalas(Balas, NUM_BALAS, Jogador, Inimigo);
-				Jogador.vida = SalvarVida[playerid];
-				Inimigo.vida = SalvarVida[NPC];
-				TPersonagem Angulo = CalcularAngulo(mouse_x, mouse_y, mouse_z, Jogador);
-				Jogador.z = Angulo.z;
-				rotate_sprite(buffer, Personagem, Jogador.x, Jogador.y, itofix(GRAUS_PARA_ALLEGRO(Angulo.z)));
-				TInimigos AnguloInimigo = CalcularAnguloInimigo(Jogador.x, Jogador.y, Jogador.z, Inimigo);
-				if(Inimigo.enxergando) 
-				{
-					Inimigo.z = AnguloInimigo.z;
-					rotate_sprite(buffer, InimigoBMP, Inimigo.x, Inimigo.y, itofix(GRAUS_PARA_ALLEGRO(Inimigo.z)));
-				}
-				else rotate_sprite(buffer, InimigoBMP, Inimigo.x, Inimigo.y, itofix(GRAUS_PARA_ALLEGRO(Inimigo.z)));
-				draw_sprite(buffer, Mira, mouse_x, mouse_y);
-				DesenharBalas(buffer, Balas, NUM_BALAS);
-				//Textos
-				sprintf(str, "Balas: %d", Jogador.qntBalas);
-				textout_ex(buffer, font, str, 30, 10, makecol(255,0,0), -1);
-				if(Jogador.recarregando) 
-					textout_ex(buffer, font, "Recarregando, Aguarde..", Jogador.x-30, Jogador.y-10, makecol(255,0,0), -1);
-				Barra_Vida(buffer, Jogador);
-				Barra_Vida_Inimigo(buffer, Inimigo);
-				// Morto
-				if(Jogador.vida <= 0 || Inimigo.vida <= 0)
-					sair = true;
-				//Fim
-				draw_sprite(screen, buffer, 0, 0);
-				rest(1);
-				clear(buffer);
 			}
 			destroy_bitmap(Personagem);
 			destroy_bitmap(Mira);
