@@ -581,7 +581,7 @@ int main(void)
 		printf("Couldn't load font!\n");
 
 	LOCK_FUNCTION(incrementa_TimerMenu);
-	install_int_ex(incrementa_TimerMenu, MSEC_TO_TIMER(40));
+	install_int_ex(incrementa_TimerMenu, MSEC_TO_TIMER(80));
 	// Loop Menu
 	while(!Menu.sair)
 	{
@@ -591,6 +591,7 @@ int main(void)
 		// Keys no Menu
 		if(TimerMenu > 1)
 		{
+			TimerMenu = 0;
 			if(key[KEY_DOWN] && !Menu.click) Menu.op++;
 			if(key[KEY_UP] && !Menu.click) Menu.op--;
 			if(key[KEY_RIGHT] && !Menu.click && Menu.local == 1)
@@ -651,10 +652,9 @@ int main(void)
 					set_mouse_speed(Menu.sensi, Menu.sensi);
 				}
 			}
-			if(key[KEY_ENTER]) Menu.click = true;
 			TimerMenu = 0;
 		}
-
+		if(key[KEY_ENTER]) Menu.click = true;
 		// Botao Voltar
 		if(Menu.local == 1 && Menu.op == 3 && Menu.click == true)
 		{
@@ -793,12 +793,13 @@ int main(void)
 					if(Menu.op < 0)
 						Menu.op = 1;
 					if(key[KEY_ENTER]) Menu.click = true;
+					// Resume Game
 					if(Menu.local == 2 && Menu.op == 0 && Menu.click)
 					{
 						Menu.local = 0;
 						Menu.click = false;
 						pressEsc = false;
-					}
+					} // Sair Menu
 					else if(Menu.local == 2 && Menu.op == 1 && Menu.click)
 					{
 						Menu.local = 0;
