@@ -19,6 +19,7 @@ volatile int TimerMenu;
 volatile int TimerOuvirPassos;
 volatile int TimerTiros[MAX_PLAYERS];
 volatile int TimerRecarregar[MAX_PLAYERS];
+volatile int TimerEnter;
 bool RodarTimerRecarregar[MAX_PLAYERS];
 bool RodarTimerTiro[MAX_PLAYERS];
 
@@ -506,6 +507,11 @@ void incrementa_TimerMenu()
 }
 END_OF_FUNCTION(incrementa_TimerRecarregar)
 
+void incrementa_TimerEnter()
+{
+	TimerEnter++;
+}
+
 void SalvarConf(TMenu Menu)
 {
 	FILE * pFile;
@@ -557,6 +563,7 @@ int main(void)
 	Menu.op = 0;
 	Menu.local = 0;
 	TimerMenu = 0;
+	TimerEnter = 0;
 	Menu.volume = arm[0];
 	Menu.resolucao = arm[1];
 	Menu.sensi = arm[2];
@@ -582,6 +589,9 @@ int main(void)
 
 	LOCK_FUNCTION(incrementa_TimerMenu);
 	install_int_ex(incrementa_TimerMenu, MSEC_TO_TIMER(80));
+
+	LOCK_FUNCTION(incrementa_TimerEnter);
+	install_int_ex(incrementa_TimerEnter, SECS_TO_TIMER(1));
 	// Loop Menu
 	while(!Menu.sair)
 	{
@@ -654,7 +664,18 @@ int main(void)
 			}
 			TimerMenu = 0;
 		}
-		if(key[KEY_ENTER]) Menu.click = true;
+		if(key[KEY_ENTER])
+		{
+			if(TimerEnter >= 1)
+			{
+				TimerEnter = 0;
+				Menu.click = true;
+			}
+		}
+		else
+		{
+			TimerEnter = 1;
+		}
 		// Botao Voltar
 		if(Menu.local == 1 && Menu.op == 3 && Menu.click == true)
 		{
@@ -792,7 +813,18 @@ int main(void)
 						Menu.op = 0;
 					if(Menu.op < 0)
 						Menu.op = 1;
-					if(key[KEY_ENTER]) Menu.click = true;
+					if(key[KEY_ENTER])
+					{
+						if(TimerEnter >= 1)
+						{
+							TimerEnter = 0;
+							Menu.click = true;
+						}
+					}
+					else
+					{
+						TimerEnter = 1;
+					}
 					// Resume Game
 					if(Menu.local == 2 && Menu.op == 0 && Menu.click)
 					{
